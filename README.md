@@ -9,6 +9,13 @@ Requires manifests to be uncompressed, at root of SxS source folder. Use [SxSExp
 ## Usage
 `sxsfounder <sxs source folder> <deployment manifest> <offline image path>`
 
+Requires the following servicing stack DLLs, which can be sourced from host WinSxS:
+ - `wcp.dll`
+ - `smiengine.dll`
+ - `smipi.dll`
+
+An example deployment manifest can be found [here](./SxSFounder-Offline-Servicing-Deployment.manifest).
+
 ## Credits
 - [asdcorp](https://github.com/asdcorp) for [haveSxS](https://github.com/asdcorp/haveSxS) and their invaluable education on servicing
 - [seven-mile](https://github.com/seven-mile) for [CallCbsCore](https://github.com/seven-mile/CallCbsCore) and [UF-Case](https://github.com/seven-mile/UFCase)
