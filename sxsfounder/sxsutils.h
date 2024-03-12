@@ -17,4 +17,4 @@ void DefIdentToAttrs(IDefinitionIdentity* ident, ASSEMBLY_ATTRIBUTES* attrs);
 void SxSNameFromAttrs(ASSEMBLY_ATTRIBUTES* attrs, LPWSTR* psxs_name);
 void SxSNameFromDefinitionIdentity(IDefinitionIdentity* ident, LPWSTR* sxs_name);
 
-#define HASH_COMBINE(hash, attr, val) val ? (0x1FFFFFFF7 * hash + 0x1FFFFFFF7 * SxSHash(attr) + SxSHash(val)) : hash#pragma once
+#define HASH_COMBINE(hash, attr, val) val ? (0x1FFFFFFF7 * hash + 0x1FFFFFFF7 * SxSHash(attr) + SxSHash(val)) : hash
