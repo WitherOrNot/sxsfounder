@@ -125,6 +125,14 @@ int wmain(int argc, LPCWSTR argv[])
 
     ComPtr<IDefinitionIdentity> deployment;
     ParseManifest(fullDeplPath, NULL, __uuidof(IDefinitionIdentity), &deployment);
+
+    if (FAILED(result)) {
+        wprintf(L"ERROR: Deployment ParseManifest FAILED 0x%08x\n", result);
+        DismountRegistryHives(regKeys);
+        alloc->Release();
+        return 1;
+    }
+
     txn->AddComponent(0, deployment.Get(), fullDeplPath, &disposition);
 
     ComPtr<IEnumDefinitionIdentity> deplEnum;
@@ -149,10 +157,18 @@ int wmain(int argc, LPCWSTR argv[])
 
             ComPtr<IDefinitionIdentity> manifest;
             result = ParseManifest(manifPath, NULL, __uuidof(IDefinitionIdentity), &manifest);
-            result = txn->AddComponent(0, manifest.Get(), manifPath, &disposition);
+
+            if (FAILED(result)) {
+                wprintf(L"ERROR: Component ParseManifest FAILED 0x%08x\n", result);
+                DismountRegistryHives(regKeys);
+                alloc->Release();
+                return 1;
+            }
+
+            txn->AddComponent(0, manifest.Get(), manifPath, &disposition);
 
             ComPtr<IEnumCSI_FILE> manifEnum;
-            result = txn->EnumMissingFiles(0x4 | 0x1, &manifEnum);
+            txn->EnumMissingFiles(0x4 | 0x1, &manifEnum);
 
             wprintf(L"Placing missing files...\n");
 
@@ -167,6 +183,13 @@ int wmain(int argc, LPCWSTR argv[])
                     StringCbPrintfW(fpath, MAX_PATH * sizeof(WCHAR), L"%s\\%s\\%s", fullSxsFolder, sxsName, file.fname);
                     wprintf(L"Placing %s\n", file.fname);
                     result = txn->AddFile(0, file.defIds[0], file.fname, fpath, &disposition);
+
+                    if (FAILED(result)) {
+                        wprintf(L"ERROR: AddFile %s FAILED 0x%08x\n", file.fname, result);
+                        DismountRegistryHives(regKeys);
+                        alloc->Release();
+                        return 1;
+                    }
                 }
             }
 
@@ -184,5 +207,5 @@ int wmain(int argc, LPCWSTR argv[])
     // WcpShutdown(cookie);
     FreeLibrary(wcp);
 
-    return result;
+    return 0;
 }

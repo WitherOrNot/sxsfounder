@@ -11,7 +11,6 @@ Requires manifests to be uncompressed, at root of SxS source folder. Use [SxSExp
 
 Requires the following servicing stack DLLs, which can be sourced from host WinSxS:
  - `wcp.dll`
- - `smiengine.dll`
  - `smipi.dll`
 
 An example deployment manifest can be found [here](./SxSFounder-Offline-Servicing-Deployment.manifest).
