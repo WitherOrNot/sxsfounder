@@ -1,21 +1,20 @@
 # sxsfounder
 
-Creates foundation image from SxS components.
-
-Requires manifests to be uncompressed, at root of SxS source folder. Use [SXSEXP](https://github.com/hfiref0x/SXSEXP) to convert existing SxS sources to this format if needed.
+Creates foundation image from SxS components. Requires `cbss.exe` to be serviced. If you don't know what that means, don't bother.
 
 > DISCLAIMER: This code is very rough and thoroughly untested. If it deletes your Minecraft hardcore world or makes you grow a third head, that is strictly a "you" problem.
 
 ## Usage
-`sxsfounder <sxs source folder> <deployment manifest> <offline image path>`
+`sxsfounder <offline image path> <architecture>`
 
-Requires the following servicing stack DLLs, which can be sourced from host WinSxS:
- - `wcp.dll`
- - `smipi.dll`
+Where `<architecture>` is one of:
+ - `x86`
+ - `amd64`
+ - `arm`
+ - `arm64`
 
-An example deployment manifest can be found [here](./SxSFounder-Offline-Servicing-Deployment.manifest).
+Requires `wcp.dll` which can be sourced from host or imaged WinSxS.
 
 ## Credits
-- [asdcorp](https://github.com/asdcorp) for [haveSxS](https://github.com/asdcorp/haveSxS) and their invaluable education on servicing
+- [asdcorp](https://github.com/asdcorp) for [haveSxS](https://github.com/asdcorp/haveSxS) and their invaluable assistance and education on servicing
 - [seven-mile](https://github.com/seven-mile) for [CallCbsCore](https://github.com/seven-mile/CallCbsCore) and [UF-Case](https://github.com/seven-mile/UFCase)
-- [himselfv](https://github.com/himselfv) for [manifestenum](https://github.com/himselfv/manifestenum)

@@ -10,7 +10,7 @@ https://github.com/seven-mile/UFCase
 wcp.dll symbols
 */
 
-// ==================WCP Functions==================
+#pragma region Exported Functions
 
 /* [v1_enum] */
 enum _OFFLINE_STORE_CREATION_PARAMETERS_FLAGS
@@ -198,7 +198,7 @@ typedef HRESULT(__stdcall* PPARSE_MANIFEST_FUNCTION)(
     /* [annotation][iid_is][out] */
     _Out_  IUnknown** ppManifest);
 
-//==================CSI Interfaces==================
+#pragma region CSI Interfaces
 
 typedef struct _IDENTITY_ATTRIBUTE
 {

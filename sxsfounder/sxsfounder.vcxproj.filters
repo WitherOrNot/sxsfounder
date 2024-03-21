@@ -18,14 +18,8 @@
     <ClCompile Include="sxsfounder.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="sxsutils.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="sxsutils.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="wcp.h">
       <Filter>Header Files</Filter>
     </ClInclude>

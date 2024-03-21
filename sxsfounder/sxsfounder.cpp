@@ -2,33 +2,45 @@
 #include <objbase.h>
 #include <wrl/client.h>
 #include "wcp.h"
-#include "sxsutils.h"
 
 using Microsoft::WRL::ComPtr;
 
 int wmain(int argc, LPCWSTR argv[])
 {
-    printf("sxsfounder 0.0.1 by witherornot\n");
+    printf("sxsfounder 0.0.3 by witherornot\n");
 
-
-    if (argc < 4) {
-        wprintf(L"Usage: %s <sxs source folder> <deployment manifest> <offline image path>\n", argv[0]);
+    if (argc < 3) {
+        wprintf(L"Usage: %s <offline image path> <architecture>\n", argv[0]);
+        wprintf(L"Supported architectures: amd64, x86, arm, arm64\n");
         return 1;
     }
 
-    LPCWSTR sxsFolder = argv[1];
-    LPCWSTR deplPath = argv[2];
-    LPCWSTR offlineImage = argv[3];
-
-    WCHAR fullSxsFolder[MAX_PATH];
-    WCHAR fullDeplPath[MAX_PATH];
+    LPCWSTR offlineImage = argv[1];
+    LPCWSTR arch = argv[2];
+    DWORD archVal = -1;
+    
+    if (!wcscmp(arch, L"amd64")) {
+        archVal = 9;
+    }
+    else if (!wcscmp(arch, L"x86")) {
+        archVal = 0;
+    }
+    else if (!wcscmp(arch, L"arm")) {
+        archVal = 5;
+    }
+    else if (!wcscmp(arch, L"arm64")) {
+        archVal = 12;
+    }
+    else {
+        wprintf(L"ERROR: %s is not a supported architecture\n", arch);
+        return 1;
+    }
+    
     WCHAR fullOfflineImage[MAX_PATH];
-
-    GetFullPathNameW(sxsFolder, MAX_PATH, fullSxsFolder, NULL);
-    GetFullPathNameW(deplPath, MAX_PATH, fullDeplPath, NULL);
+    
     GetFullPathNameW(offlineImage, MAX_PATH, fullOfflineImage, NULL);
 
-    wprintf(L"SxS Source: %s\nDeployment Manifest: %s\nOffline Image: %s\n", fullSxsFolder, fullDeplPath, fullOfflineImage);
+    wprintf(L"Creating offline image at %s\n", fullOfflineImage);
 
     HMODULE wcp = LoadLibraryA("wcp.dll");
 
@@ -49,7 +61,19 @@ int wmain(int argc, LPCWSTR argv[])
     auto CreateNewWindows = (PCREATE_NEW_WINDOWS_FUNCTION)GetProcAddress(wcp, "CreateNewWindows");
     auto CreateNewOfflineStore = (PCREATE_NEW_OFFLINE_STORE_FUNCTION)GetProcAddress(wcp, "CreateNewOfflineStore");
     auto DismountRegistryHives = (PDISMOUNT_REGISTRY_HIVES_FUNCTION)GetProcAddress(wcp, "DismountRegistryHives");
-    auto ParseManifest = (PPARSE_MANIFEST_FUNCTION)GetProcAddress(wcp, "ParseManifest");
+
+    if (
+        !WcpInitialize ||
+        !WcpShutdown ||
+        !CreateNewPseudoWindows ||
+        !SetIsolationIMalloc ||
+        !CreateNewOfflineStore ||
+        !CreateNewWindows ||
+        !DismountRegistryHives
+    ) {
+        printf("ERROR: wcp.dll does not contain correct functions\n");
+        return 1;
+    }
 
     void* cookie;
     if (FAILED(WcpInitialize(&cookie))) {
@@ -73,7 +97,7 @@ int wmain(int argc, LPCWSTR argv[])
     OFFLINE_STORE_CREATION_PARAMETERS pParameters = { sizeof(OFFLINE_STORE_CREATION_PARAMETERS) };
 
     pParameters.pszHostSystemDrivePath = fullOfflineImage;
-    pParameters.ulProcessorArchitecture = 9;
+    pParameters.ulProcessorArchitecture = archVal;
 
     void* regKeys;
 
@@ -116,92 +140,6 @@ int wmain(int argc, LPCWSTR argv[])
     wprintf(L"HostRegistryDefaultUserPath: %s\n", pParameters.pszHostRegistryDefaultUserPath);
     wprintf(L"ProcessorArchitecture: 0x%08x\n", pParameters.ulProcessorArchitecture);
     wprintf(L"HostRegistryMachineOfflineSchemaPath: %s\n\n", pParameters.pszHostRegistryMachineOfflineSchemaPath);
-
-    ComPtr<ICSITransaction> txn;
-    result = store->BeginTransaction(0, __uuidof(ICSITransaction), L"SxSFounder", &txn);
-
-    ComPtr<ICSITransaction2> deplTxn;
-    result = txn->QueryInterface(__uuidof(ICSITransaction2), &deplTxn);
-
-    ComPtr<IDefinitionIdentity> deployment;
-    ParseManifest(fullDeplPath, NULL, __uuidof(IDefinitionIdentity), &deployment);
-
-    if (FAILED(result)) {
-        wprintf(L"ERROR: Deployment ParseManifest FAILED 0x%08x\n", result);
-        DismountRegistryHives(regKeys);
-        alloc->Release();
-        return 1;
-    }
-
-    txn->AddComponent(0, deployment.Get(), fullDeplPath, &disposition);
-
-    ComPtr<IEnumDefinitionIdentity> deplEnum;
-    txn->EnumMissingComponents(0, &deplEnum, &disposition);
-
-    SIZE_T cbFetched = 1;
-
-    while (cbFetched) {
-        ComPtr<IDefinitionIdentity> depComponent;
-        ASSEMBLY_ATTRIBUTES attrs;
-        LPWSTR sxsName;
-        WCHAR manifPath[MAX_PATH];
-
-        result = deplEnum->Next(1, &depComponent, &cbFetched);
-
-        if (SUCCEEDED(result) && cbFetched) {
-            DefIdentToAttrs(depComponent.Get(), &attrs);
-            wprintf(L"Found missing component: %s\n", attrs.name);
-            SxSNameFromAttrs(&attrs, &sxsName);
-            StringCbPrintfW(manifPath, MAX_PATH * sizeof(WCHAR), L"%s\\%s.manifest", fullSxsFolder, sxsName);
-            wprintf(L"Reading manifest %s\n", manifPath);
-
-            ComPtr<IDefinitionIdentity> manifest;
-            result = ParseManifest(manifPath, NULL, __uuidof(IDefinitionIdentity), &manifest);
-
-            if (FAILED(result)) {
-                wprintf(L"ERROR: Component ParseManifest FAILED 0x%08x\n", result);
-                DismountRegistryHives(regKeys);
-                alloc->Release();
-                return 1;
-            }
-
-            txn->AddComponent(0, manifest.Get(), manifPath, &disposition);
-
-            ComPtr<IEnumCSI_FILE> manifEnum;
-            txn->EnumMissingFiles(0x4 | 0x1, &manifEnum);
-
-            wprintf(L"Placing missing files...\n");
-
-            ULONG64 pbFetched = TRUE;
-
-            while (pbFetched) {
-                CSIFILE file;
-                result = manifEnum->Next(1, &file, &pbFetched);
-
-                if (SUCCEEDED(result) && pbFetched) {
-                    WCHAR fpath[MAX_PATH];
-                    StringCbPrintfW(fpath, MAX_PATH * sizeof(WCHAR), L"%s\\%s\\%s", fullSxsFolder, sxsName, file.fname);
-                    wprintf(L"Placing %s\n", file.fname);
-                    result = txn->AddFile(0, file.defIds[0], file.fname, fpath, &disposition);
-
-                    if (FAILED(result)) {
-                        wprintf(L"ERROR: AddFile %s FAILED 0x%08x\n", file.fname, result);
-                        DismountRegistryHives(regKeys);
-                        alloc->Release();
-                        return 1;
-                    }
-                }
-            }
-
-            free(sxsName);
-        }
-    }
-
-    txn->PinDeployment(0, deployment.Get(), NULL, NULL, NULL, NULL, fullDeplPath, NULL, 0, 0);
-    deplTxn->MarkDeploymentStaged(0, deployment.Get(), NULL, NULL, NULL, 0);
-    txn->InstallDeployment(0, deployment.Get(), NULL, NULL, NULL, NULL, fullDeplPath, NULL, 0);
-
-    result = txn->Commit(0, NULL, NULL);
 
     DismountRegistryHives(regKeys);
     // WcpShutdown(cookie);
