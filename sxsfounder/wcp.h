@@ -198,6 +198,8 @@ typedef HRESULT(__stdcall* PPARSE_MANIFEST_FUNCTION)(
     /* [annotation][iid_is][out] */
     _Out_  IUnknown** ppManifest);
 
+#pragma endregion
+
 #pragma region CSI Interfaces
 
 typedef struct _IDENTITY_ATTRIBUTE
@@ -473,3 +475,5 @@ struct __declspec(uuid("465F1EC1-7F1D-4A85-A30B-AE1090F212DB")) ICSIStore
     virtual HRESULT STDMETHODCALLTYPE CancelPendingTransactions(
         ULONG, UINT64, _Out_ LPCTSTR const*, _Out_ ULONG*) = 0;
 };
+
+#pragma endregion
