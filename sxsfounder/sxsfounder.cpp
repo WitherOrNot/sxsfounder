@@ -102,7 +102,7 @@ int wmain(int argc, LPCWSTR argv[])
     void* regKeys;
 
     DWORD disposition;
-    result = CreateNewWindows(0, L"C:\\", &pParameters, &regKeys, &disposition);
+    result = CreateNewWindows(0, L"X:\\", &pParameters, &regKeys, &disposition);
 
     if (FAILED(result)) {
         printf("ERROR: CreateNewWindows FAILED 0x%08x\n", result);
