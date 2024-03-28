@@ -16,5 +16,4 @@ Where `<architecture>` is one of:
 Requires `wcp.dll` which can be sourced from host or imaged WinSxS.
 
 ## Credits
-- [asdcorp](https://github.com/asdcorp) for [haveSxS](https://github.com/asdcorp/haveSxS) and their invaluable assistance and education on servicing
 - [seven-mile](https://github.com/seven-mile) for [CallCbsCore](https://github.com/seven-mile/CallCbsCore) and [UF-Case](https://github.com/seven-mile/UFCase)
